@@ -65,10 +65,8 @@ class HubManager(object):
 
 def initialise(
         videoPath,
-        bingSpeechKey,
         predictThreshold,
-        imageProcessingEndpoint="",
-        speechMapFileName = None
+        imageProcessingEndpoint=""
 ):
     '''
     Capture a camera feed, send it to processing and forward outputs to EdgeHub
@@ -85,20 +83,10 @@ def initialise(
         # global hubManager
         # hubManager = HubManager()
 
-        with CameraCapture(videoPath, bingSpeechKey, predictThreshold, imageProcessingEndpoint, send_to_Hub_callback, speechMapFileName) as cameraCapture:
+        with CameraCapture(videoPath, predictThreshold, imageProcessingEndpoint, send_to_Hub_callback) as cameraCapture:
             cameraCapture.start()
     except KeyboardInterrupt:
         print("Camera capture module stopped")
-
-
-def __convertStringToBool(env):
-    if env in ['True', 'TRUE', '1', 'y', 'YES', 'Y', 'Yes']:
-        return True
-    elif env in ['False', 'FALSE', '0', 'n', 'NO', 'N', 'No']:
-        return False
-    else:
-        raise ValueError('Could not convert string to bool.')
-
 
 async def main():
     global module_client
@@ -106,9 +94,6 @@ async def main():
         VIDEO_PATH = os.getenv('Video', '0')
         PREDICT_THRESHOLD = os.getenv('Threshold', .75)
         IMAGE_PROCESSING_ENDPOINT = os.getenv('AiEndpoint', 'http://localhost:80/image')
-        AZURE_SPEECH_SERVICES_KEY = os.getenv('azureSpeechServicesKey', '2f57f2d9f1074faaa0e9484e1f1c08c1')
-        SPEECH_MAP_FILENAME = os.getenv('SpeechMapFilename', 'speech_map_australian.json')
-
 
         # The client object is used to interact with your Azure IoT hub.
         module_client = IoTHubModuleClient.create_from_edge_environment()
@@ -119,8 +104,8 @@ async def main():
         print(error)
         sys.exit(1)
 
-    initialise(VIDEO_PATH, AZURE_SPEECH_SERVICES_KEY,
-         PREDICT_THRESHOLD, IMAGE_PROCESSING_ENDPOINT, SPEECH_MAP_FILENAME)
+    initialise(VIDEO_PATH,
+         PREDICT_THRESHOLD, IMAGE_PROCESSING_ENDPOINT)
 
 if __name__ == "__main__":
     # loop = asyncio.get_event_loop()
