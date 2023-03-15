@@ -26,3 +26,4 @@ EXPOSE 5678
 
 ENTRYPOINT [ "python3", "iotedge_camera.py" ]
 
+

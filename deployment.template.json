@@ -60,10 +60,9 @@
                             "image": "${MODULES.CameraCaptureOpenCV}",
                             "createOptions": {
                                 "Env": [
-                                    "Video=0",
-                                    "azureSpeechServicesKey=2f57f2d9f1074faaa0e9484e1f1c08c1",
-                                    "AiEndpoint=http://image-classifier-service:80/image",
-                                    "SpeechMapFilename=speech_map_australian.json"
+                                    "Video=rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4",
+                                    "Delay=1",
+                                    "AiEndpoint=http://image-classifier-service:80/image"
                                 ],
                                 "HostConfig": {
                                     "PortBindings": {

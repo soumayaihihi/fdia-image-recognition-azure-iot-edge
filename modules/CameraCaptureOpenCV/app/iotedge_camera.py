@@ -32,10 +32,10 @@ def send_to_Hub_callback(strMessage):
 
     message = Message(strMessage)
     message.content_encoding = "utf-8"
-    message.custom_properties["appid"] = "scanner";
+    message.custom_properties["appid"] = "scanner"
 
 
-    # hubManager.send_event_to_output("output1", message, 0)
+    module_client.send_message_to_output(message, "output1")
     print('sent from send_to_Hub_callback')
 
 # Callback received when the message that we're forwarding is processed.
@@ -46,27 +46,11 @@ def send_confirmation_callback(message, result, user_context):
     SEND_CALLBACKS += 1
 
 
-class HubManager(object):
-
-    async def __init__(
-            self
-    ):
-        # The client object is used to interact with your Azure IoT hub.
-        module_client = IoTHubModuleClient.create_from_edge_environment()
-        await self.client.connect()
-
-    def send_event_to_output(self, outputQueueName, event, send_context):
-        pass
-        
-        # self.client.send_message(message);
-        # self.client.send_event_async(
-        #     outputQueueName, event, send_confirmation_callback, send_context)
-
-
 def initialise(
         videoPath,
         predictThreshold,
-        imageProcessingEndpoint=""
+        processingDelay,
+        imageProcessingEndpoint="",
 ):
     '''
     Capture a camera feed, send it to processing and forward outputs to EdgeHub
@@ -83,7 +67,7 @@ def initialise(
         # global hubManager
         # hubManager = HubManager()
 
-        with CameraCapture(videoPath, predictThreshold, imageProcessingEndpoint, send_to_Hub_callback) as cameraCapture:
+        with CameraCapture(videoPath, predictThreshold, imageProcessingEndpoint, send_to_Hub_callback, processingDelay) as cameraCapture:
             cameraCapture.start()
     except KeyboardInterrupt:
         print("Camera capture module stopped")
@@ -93,11 +77,11 @@ async def main():
     try:
         VIDEO_PATH = os.getenv('Video', '0')
         PREDICT_THRESHOLD = os.getenv('Threshold', .75)
+        PROCESSING_DELAY = int(os.getenv('Delay', 1))
         IMAGE_PROCESSING_ENDPOINT = os.getenv('AiEndpoint', 'http://localhost:80/image')
 
-        # The client object is used to interact with your Azure IoT hub.
+        # # The client object is used to interact with your Azure IoT hub.
         module_client = IoTHubModuleClient.create_from_edge_environment()
-
         module_client.connect()
 
     except ValueError as error:
@@ -105,7 +89,9 @@ async def main():
         sys.exit(1)
 
     initialise(VIDEO_PATH,
-         PREDICT_THRESHOLD, IMAGE_PROCESSING_ENDPOINT)
+         PREDICT_THRESHOLD, 
+         PROCESSING_DELAY,
+         IMAGE_PROCESSING_ENDPOINT)
 
 if __name__ == "__main__":
     # loop = asyncio.get_event_loop()

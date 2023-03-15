@@ -4,7 +4,7 @@
 
 # Imports
 # import text2speech
-from VideoStream import VideoStream
+# from VideoStream import VideoStream
 # import VideoStream
 import os.path
 import base64
@@ -34,21 +34,13 @@ class CameraCapture(object):
         except ValueError:
             return False
 
-    # def __localize_text(self, key):
-        # value = None
-        # if self.speech_map is not None:
-        #     result = list(
-        #         filter(lambda text: text['key'] == key, self.speech_map))
-        #     if len(result) > 0:
-        #         value = result[0]['value']
-        # return value
-
     def __init__(
             self,
             videoPath,
             predictThreshold,
             imageProcessingEndpoint,
-            sendToHubCallback
+            sendToHubCallback,
+            processingDelay
     ):
         self.videoPath = videoPath
 
@@ -56,6 +48,7 @@ class CameraCapture(object):
         self.imageProcessingEndpoint = imageProcessingEndpoint
         self.imageProcessingParams = ""
         self.sendToHubCallback = sendToHubCallback
+        self.processingDelay = processingDelay
 
 
         if self.__IsInt(videoPath):
@@ -64,32 +57,6 @@ class CameraCapture(object):
 
         self.vs = None
 
-        # self.speech_map = None
-        # self.speech_voice = 'en-AU-Catherine'
-
-        # self.speech_map_filename = speechMapFileName
-
-        # if speechMapFileName is not None and os.path.isfile(self.speech_map_filename):
-        #     with open(self.speech_map_filename, encoding='utf-8') as f:
-        #         json_data = json.load(f)
-        #         self.speech_voice = json_data.get('voice')
-        #         self.speech_map = json_data.get('map')
-
-        # self.tts = text2speech.TextToSpeech(
-        #     azureSpeechServiceKey, enableMemCache=True, enableDiskCache=True, voice=self.speech_voice)
-        
-        # text = self.__localize_text('Starting scanner')
-        # self.tts.play('Starting scanner' if text is None else text)
-
-
-    # def __buildSentence(self, tag):
-    #     vowels = ('a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U')
-    #     sentence = 'You scanned '
-    #     if tag.startswith(vowels):
-    #         sentence = sentence + 'an '
-    #     else:
-    #         sentence = sentence + 'a '
-    #     return sentence + tag
 
     def __sendFrameForProcessing(self, frame):
         global count
@@ -123,28 +90,15 @@ class CameraCapture(object):
         print("label: {}, probability {}".format(
             sortResponse['tagName'], sortResponse['probability']))
 
-        # if sortResponse['tagName'] == 'Hand':
-        #     lastTagSpoken = sortResponse['tagName']
-        #     return []
-
-        # if probability > self.predictThreshold and sortResponse['tagName'] != lastTagSpoken:
         if probability > self.predictThreshold:
-            # lastTagSpoken = sortResponse['tagName']
-            # print('text to speech ' + lastTagSpoken)
-
-            # text = self.__localize_text(lastTagSpoken)
-            # self.tts.play(self.__buildSentence(lastTagSpoken) if text is None else text)
 
             return json.dumps(predictions)
         else:
             return []
 
-    # def __displayTimeDifferenceInMs(self, endTime, startTime):
-    #     return str(int((endTime-startTime) * 1000)) + " ms"
-
     def __enter__(self):
-        # self.vs = VideoStream(int(self.videoPath)).start()
-        self.vs = VideoStream(self.videoPath).start()
+        # self.vs = VideoStream(self.videoPath).start()
+        self.vs = cv2.VideoCapture(self.videoPath)
         # needed to load at least one frame into the VideoStream class
         time.sleep(1.0)
 
@@ -155,14 +109,19 @@ class CameraCapture(object):
         frameCounter = 0
         while True:
             frameCounter += 1
-            frame = self.vs.read()
+            # frame = self.vs.read()
+            (grabbed, frame) = self.vs.read()
+
+            if(not grabbed == True):
+                print('End of stream reached')
+                return
 
             if self.imageProcessingEndpoint != "":
 
                 encodedFrame = cv2.imencode(".jpg", frame)[1].tostring()
                 try:
                     response = self.__sendFrameForProcessing(encodedFrame)
-                    # print(response)
+
                     # forwarding outcome of external processing to the EdgeHub
                     if response != "[]" and self.sendToHubCallback is not None:
                         try:
@@ -174,7 +133,7 @@ class CameraCapture(object):
                     print('connectivity issue')
 
             # slow things down a bit - 1 frame a second is fine for demo purposes and less battery drain and lower Raspberry Pi CPU Temperature
-            time.sleep(1)
+            time.sleep(self.processingDelay)
 
     def __exit__(self, exception_type, exception_value, traceback):
         pass
