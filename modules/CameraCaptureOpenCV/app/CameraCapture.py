@@ -82,19 +82,22 @@ class CameraCapture(object):
             print("retry inference")
             return []
 
-        predictions = response.json()['predictions']
-        sortResponse = sorted(
-            predictions, key=lambda k: k['probability'], reverse=True)[0]
-        probability = sortResponse['probability']
+        #predictions = response.json()['predictions']
+        predictions = response.json()
 
-        print("label: {}, probability {}".format(
-            sortResponse['tagName'], sortResponse['probability']))
+        # sortResponse = sorted(
+        #     predictions, key=lambda k: k['probability'], reverse=True)[0]
+        # probability = sortResponse['probability']
 
-        if probability > self.predictThreshold:
+        # print("label: {}, probability {}".format(
+        #     sortResponse['tagName'], sortResponse['probability']))
 
-            return json.dumps(predictions)
-        else:
-            return []
+        # if probability > self.predictThreshold:
+
+        #     return json.dumps(predictions)
+        # else:
+        #     return []
+        return json.dumps(predictions)
 
     def __enter__(self):
         # self.vs = VideoStream(self.videoPath).start()
